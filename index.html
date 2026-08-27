@@ -121,7 +121,7 @@
         try {
           AdController = window.Adsgram.init({ blockId: BLOCK_ID });
         } catch (e) {
-          console.error("Adsgram initialization skipped:", e);
+          console.error("Adsgram init error:", e);
         }
       }
     }
@@ -185,42 +185,32 @@
         initAdsgram();
       }
 
+      if (!AdController) {
+        alert("Ad provider unavailable. Make sure you open this inside Telegram!");
+        return;
+      }
+
       const watchBtn = document.getElementById('watch-ad-btn');
       watchBtn.disabled = true;
       watchBtn.innerText = "Loading Ad...";
 
-      if (AdController) {
-        AdController.show().then(() => {
-          rewardUser();
-        }).catch(() => {
-          // Fallback to simulated reward if Adsgram fails
-          simulateAdReward();
-        }).finally(() => {
-          watchBtn.disabled = false;
-          watchBtn.innerText = "Watch Ad";
-        });
-      } else {
-        // Fallback execution when Adsgram SDK is blocked or unavailable
-        simulateAdReward();
-      }
-    }
-
-    function simulateAdReward() {
-      setTimeout(() => {
-        rewardUser();
-        const watchBtn = document.getElementById('watch-ad-btn');
-        if (watchBtn) {
-          watchBtn.disabled = false;
-          watchBtn.innerText = "Watch Ad";
+      AdController.show().then((result) => {
+        // Only give reward if ad was watched completely
+        if (result && result.done) {
+          points += 10;
+          localStorage.setItem('user_points', points.toString());
+          updateUI();
+          alert("Ad completed! +10 ETB added.");
+        } else {
+          alert("Ad was not completed. No reward added.");
         }
-      }, 1500);
-    }
-
-    function rewardUser() {
-      points += 10;
-      localStorage.setItem('user_points', points.toString());
-      updateUI();
-      alert("Ad completed! +10 ETB added.");
+      }).catch((error) => {
+        console.error("Ad error/skipped:", error);
+        alert("No ad available right now or ad was skipped.");
+      }).finally(() => {
+        watchBtn.disabled = false;
+        watchBtn.innerText = "Watch Ad";
+      });
     }
 
     function copyRefLink() {
