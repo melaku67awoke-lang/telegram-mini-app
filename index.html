@@ -116,18 +116,16 @@
     const BLOCK_ID = "44862";
     let AdController = null;
 
-    function initAdsgram() {
-      if (typeof window.Adsgram !== 'undefined') {
+    function getAdController() {
+      if (!AdController && typeof window.Adsgram !== 'undefined') {
         try {
           AdController = window.Adsgram.init({ blockId: BLOCK_ID });
         } catch (e) {
           console.error("Adsgram init error:", e);
         }
       }
+      return AdController;
     }
-
-    initAdsgram();
-    window.addEventListener('load', initAdsgram);
 
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
@@ -180,37 +178,38 @@
       }
     }
 
-    function watchAd() {
-      if (!AdController) {
-        initAdsgram();
-      }
-
-      if (!AdController) {
-        alert("Ad provider unavailable. Make sure you open this inside Telegram!");
-        return;
-      }
-
+    async function watchAd() {
       const watchBtn = document.getElementById('watch-ad-btn');
       watchBtn.disabled = true;
       watchBtn.innerText = "Loading Ad...";
 
-      AdController.show().then((result) => {
-        // Only give reward if ad was watched completely
-        if (result && result.done) {
+      const controller = getAdController();
+
+      if (!controller) {
+        alert("Ad provider network unavailable right now. Please try clicking again in a moment!");
+        watchBtn.disabled = false;
+        watchBtn.innerText = "Watch Ad";
+        return;
+      }
+
+      try {
+        const result = await controller.show();
+        // Strict reward check: Adsgram returns done: true on complete views
+        if (result && (result.done || result.state === 'completed')) {
           points += 10;
           localStorage.setItem('user_points', points.toString());
           updateUI();
           alert("Ad completed! +10 ETB added.");
         } else {
-          alert("Ad was not completed. No reward added.");
+          alert("Ad was closed before completing. No reward earned.");
         }
-      }).catch((error) => {
-        console.error("Ad error/skipped:", error);
-        alert("No ad available right now or ad was skipped.");
-      }).finally(() => {
+      } catch (error) {
+        console.error("Adsgram error or skipped:", error);
+        alert("No ads available right now or ad was skipped.");
+      } finally {
         watchBtn.disabled = false;
         watchBtn.innerText = "Watch Ad";
-      });
+      }
     }
 
     function copyRefLink() {
