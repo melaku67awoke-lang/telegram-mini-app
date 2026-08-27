@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Task App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #0f172a; color: white; text-align: center; padding: 20px; }
+    .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+    button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; width: 100%; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Total Balance</h2>
+    <h1 id="balance">0 ETB</h1>
+  </div>
 
+  <div class="card">
+    <h3>Daily Reward</h3>
+    <button onclick="claimReward()">Claim 50 ETB</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let points = 0;
+    function claimReward() {
+      points += 50;
+      document.getElementById('balance').innerText = points + " ETB";
+      alert("Claimed 50 ETB!");
+    }
+  </script>
+</body>
+</html>
