@@ -121,7 +121,7 @@
       const oneDay = 24 * 60 * 60 * 1000;
       const bonusBtn = document.getElementById('bonus-btn');
 
-      if (now - lastClaimTime < oneDay) {
+      if (lastClaimTime > 0 && (now - lastClaimTime < oneDay)) {
         bonusBtn.disabled = true;
         bonusBtn.innerText = "Claimed Today";
       } else {
@@ -134,13 +134,15 @@
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
 
-      if (now - lastClaimTime >= oneDay) {
+      if (lastClaimTime === 0 || (now - lastClaimTime >= oneDay)) {
         points += 50;
         lastClaimTime = now;
         localStorage.setItem('user_points', points.toString());
         localStorage.setItem('last_claim_time', lastClaimTime.toString());
         updateUI();
         alert("Success! You claimed 50 ETB.");
+      } else {
+        alert("Daily bonus already claimed today!");
       }
     }
 
@@ -194,7 +196,6 @@
       localStorage.setItem('user_points', points.toString());
       updateUI();
       
-      // Clear inputs
       document.getElementById('holder-name').value = '';
       document.getElementById('account-number').value = '';
       document.getElementById('withdraw-amount').value = '';
@@ -202,7 +203,7 @@
       alert(`Submitted Successfully!\n\nBank: ${bank}\nAccount: ${account}\nAmount: ${amount} ETB\n\nNote: Withdrawal process takes 5 minutes to 24 hours.`);
     }
 
-    // Initialize UI on startup
+    // Initialize UI
     updateUI();
   </script>
 </body>
