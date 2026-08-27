@@ -45,7 +45,7 @@
     <div class="card">
       <h2>Watch Ads & Earn</h2>
       <p>Watch short ads to earn 10 ETB per view.</p>
-      <button onclick="watchAd()">Watch Ad</button>
+      <button id="watch-ad-btn" onclick="watchAd()">Watch Ad</button>
     </div>
   </div>
 
@@ -109,19 +109,27 @@
   </div>
 
   <script>
-    // Initialize WebApp cleanly
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.expand();
     }
 
+    const BLOCK_ID = "44862";
     let AdController = null;
-    try {
-      if (typeof Adsgram !== 'undefined') {
-        AdController = Adsgram.init({ blockId: "44862" });
-      }
-    } catch(e) { console.log("Adsgram init skipped"); }
 
-    // State Variables
+    function initAdsgram() {
+      if (typeof window.Adsgram !== 'undefined') {
+        try {
+          AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+        } catch (e) {
+          console.error("Adsgram init error:", e);
+        }
+      }
+    }
+
+    // Try loading on launch
+    initAdsgram();
+    window.addEventListener('load', initAdsgram);
+
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
 
@@ -174,17 +182,31 @@
     }
 
     function watchAd() {
+      // Retry initialization if it was delayed
       if (!AdController) {
-        alert("Ad network is loading or unavailable. Try again in a moment!");
+        initAdsgram();
+      }
+
+      if (!AdController) {
+        alert("Ad provider is still initializing or blocked by an AdBlocker. Please try again in a few seconds.");
         return;
       }
+
+      const watchBtn = document.getElementById('watch-ad-btn');
+      watchBtn.disabled = true;
+      watchBtn.innerText = "Loading Ad...";
+
       AdController.show().then((result) => {
         points += 10;
         localStorage.setItem('user_points', points.toString());
         updateUI();
         alert("Ad completed! +10 ETB added.");
       }).catch((error) => {
-        alert("Ad was skipped or unavailable. Try again!");
+        console.error("Ad error:", error);
+        alert("Ad skipped or fill unavailable right now. Try again!");
+      }).finally(() => {
+        watchBtn.disabled = false;
+        watchBtn.innerText = "Watch Ad";
       });
     }
 
@@ -225,17 +247,14 @@
         return;
       }
 
-      // Deduct balance and sync UI
       points -= amount;
       localStorage.setItem('user_points', points.toString());
       updateUI();
 
-      // Clear input fields
       document.getElementById('holder-name').value = '';
       document.getElementById('account-number').value = '';
       document.getElementById('withdraw-amount').value = '';
 
-      // Render Confirmation Screen
       document.getElementById('withdraw-form').style.display = 'none';
       document.getElementById('submitted-details').innerHTML = `<strong>Method:</strong> ${bank}<br><strong>Account:</strong> ${account}<br><strong>Amount:</strong> ${amount} ETB`;
       document.getElementById('withdraw-submitted').style.display = 'block';
@@ -246,7 +265,6 @@
       document.getElementById('withdraw-form').style.display = 'block';
     }
 
-    // Run startup sync
     updateUI();
   </script>
 </body>
