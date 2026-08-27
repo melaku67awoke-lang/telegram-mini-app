@@ -17,7 +17,8 @@
     .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #334155; }
     .nav-bar button { background: none; border: none; color: #94a3b8; font-size: 11px; width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: normal; }
     .nav-bar button.active-tab { color: #3b82f6; font-weight: bold; }
-    .nav-bar svg { width: 20px; height: 20px; fill: currentColor; }
+    .nav-bar svg, .bonus-title svg { width: 22px; height: 22px; fill: currentColor; }
+    .bonus-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
   </style>
 </head>
@@ -30,7 +31,10 @@
       <h1 id="balance">0 ETB</h1>
     </div>
     <div class="card">
-      <h3>Daily Bonus</h3>
+      <div class="bonus-title">
+        <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4 15.38 12 17 10.83 14.92 8H20v6z"/></svg>
+        <h3>Daily Bonus</h3>
+      </div>
       <button id="bonus-btn" onclick="claimReward()">Claim 50 ETB</button>
     </div>
   </div>
@@ -100,12 +104,20 @@
 
     const AdController = Adsgram.init({ blockId: "44862" });
 
-    let points = parseInt(localStorage.getItem('user_points') || '0');
-    let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
+    let points = 0;
+    let claimedToday = false;
 
     function updateUI() {
       document.getElementById('balance').innerText = points + " ETB";
-      checkBonusAvailability();
+      const bonusBtn = document.getElementById('bonus-btn');
+      
+      if (claimedToday) {
+        bonusBtn.disabled = true;
+        bonusBtn.innerText = "Claimed Today";
+      } else {
+        bonusBtn.disabled = false;
+        bonusBtn.innerText = "Claim 50 ETB";
+      }
     }
 
     function showPage(pageId) {
@@ -116,40 +128,18 @@
       document.getElementById('tab-' + pageId).classList.add('active-tab');
     }
 
-    function checkBonusAvailability() {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-      const bonusBtn = document.getElementById('bonus-btn');
-
-      if (lastClaimTime > 0 && (now - lastClaimTime < oneDay)) {
-        bonusBtn.disabled = true;
-        bonusBtn.innerText = "Claimed Today";
-      } else {
-        bonusBtn.disabled = false;
-        bonusBtn.innerText = "Claim 50 ETB";
-      }
-    }
-
     function claimReward() {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-
-      if (lastClaimTime === 0 || (now - lastClaimTime >= oneDay)) {
+      if (!claimedToday) {
         points += 50;
-        lastClaimTime = now;
-        localStorage.setItem('user_points', points.toString());
-        localStorage.setItem('last_claim_time', lastClaimTime.toString());
+        claimedToday = true;
         updateUI();
         alert("Success! You claimed 50 ETB.");
-      } else {
-        alert("Daily bonus already claimed today!");
       }
     }
 
     function watchAd() {
       AdController.show().then((result) => {
         points += 10;
-        localStorage.setItem('user_points', points.toString());
         updateUI();
         alert("Ad completed! +10 ETB added.");
       }).catch((error) => {
@@ -193,7 +183,6 @@
       }
 
       points -= amount;
-      localStorage.setItem('user_points', points.toString());
       updateUI();
       
       document.getElementById('holder-name').value = '';
