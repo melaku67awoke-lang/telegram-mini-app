@@ -21,6 +21,11 @@
     .bonus-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
     .success-badge { background: #059669; padding: 10px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 16px; color: #ffffff; }
+    
+    /* Test Ad Modal Overlay */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
+    .modal-box { background: #1e293b; padding: 30px; border-radius: 16px; border: 1px solid #3b82f6; text-align: center; width: 80%; max-width: 320px; }
+    .timer-circle { width: 60px; height: 60px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 15px auto; }
   </style>
 </head>
 <body>
@@ -108,6 +113,16 @@
     </button>
   </div>
 
+  <!-- Ad Simulator Modal -->
+  <div id="ad-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Watching Test Ad...</h3>
+      <p style="font-size: 13px; color: #94a3b8;">Adsgram is currently in moderation. Simulating video ad watch.</p>
+      <div id="timer" class="timer-circle">5</div>
+      <p style="font-size: 12px; color: #64748b;">Please wait for reward...</p>
+    </div>
+  </div>
+
   <script>
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.expand();
@@ -119,7 +134,6 @@
     function getAdController() {
       if (!AdController && typeof window.Adsgram !== 'undefined') {
         try {
-          // Enabled debug: true so test ads serve while waiting for Adsgram moderation approval
           AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
         } catch (e) {
           console.error("Adsgram init error:", e);
@@ -186,31 +200,51 @@
 
       const controller = getAdController();
 
-      if (!controller) {
-        alert("Ad provider network unavailable right now. Please try clicking again in a moment!");
-        watchBtn.disabled = false;
-        watchBtn.innerText = "Watch Ad";
-        return;
+      if (controller) {
+        try {
+          const result = await controller.show();
+          if (result && (result.done || result.state === 'completed')) {
+            grantReward();
+            watchBtn.disabled = false;
+            watchBtn.innerText = "Watch Ad";
+            return;
+          }
+        } catch (error) {
+          console.log("Adsgram rejected (Unit in moderation). Falling back to simulator.");
+        }
       }
 
-      try {
-        const result = await controller.show();
-        // Rewards 10 ETB only on successful completion
-        if (result && (result.done || result.state === 'completed')) {
-          points += 10;
-          localStorage.setItem('user_points', points.toString());
-          updateUI();
-          alert("Ad completed! +10 ETB added.");
-        } else {
-          alert("Ad was closed before completing. No reward earned.");
-        }
-      } catch (error) {
-        console.error("Adsgram error or skipped:", error);
-        alert("No ads available right now or ad was skipped.");
-      } finally {
+      // Fallback: Run visual 5-second ad simulator while block status is "In moderation"
+      runSimulatedAd(() => {
+        grantReward();
         watchBtn.disabled = false;
         watchBtn.innerText = "Watch Ad";
-      }
+      });
+    }
+
+    function runSimulatedAd(callback) {
+      const modal = document.getElementById('ad-modal');
+      const timerDisplay = document.getElementById('timer');
+      modal.style.display = 'flex';
+      let secondsLeft = 5;
+      timerDisplay.innerText = secondsLeft;
+
+      const countdown = setInterval(() => {
+        secondsLeft--;
+        timerDisplay.innerText = secondsLeft;
+        if (secondsLeft <= 0) {
+          clearInterval(countdown);
+          modal.style.display = 'none';
+          callback();
+        }
+      }, 1000);
+    }
+
+    function grantReward() {
+      points += 10;
+      localStorage.setItem('user_points', points.toString());
+      updateUI();
+      alert("Ad completed! +10 ETB added.");
     }
 
     function copyRefLink() {
