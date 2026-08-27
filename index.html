@@ -3,23 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Task App</title>
+  <title>Earn Money App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #0f172a; color: white; text-align: center; padding: 20px; }
-    .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
-    button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; width: 100%; cursor: pointer; }
+    body { font-family: Arial, sans-serif; background-color: #0f172a; color: white; margin: 0; padding: 20px; padding-bottom: 70px; }
+    .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
+    button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; width: 100%; cursor: pointer; margin-top: 10px; }
+    .page { display: none; }
+    .active { display: block; }
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #334155; }
+    .nav-bar button { background: none; border: none; color: #94a3b8; font-size: 12px; width: auto; margin: 0; }
+    .nav-bar button.active-tab { color: #3b82f6; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Total Balance</h2>
-    <h1 id="balance">0 ETB</h1>
+
+  <!-- Dashboard Page -->
+  <div id="dashboard" class="page active">
+    <div class="card">
+      <h2>Total Balance</h2>
+      <h1 id="balance">0 ETB</h1>
+    </div>
+    <div class="card">
+      <h3>Daily Bonus</h3>
+      <button onclick="claimReward()">Claim 50 ETB</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Daily Reward</h3>
-    <button onclick="claimReward()">Claim 50 ETB</button>
+  <!-- Earn Ads Page -->
+  <div id="earn" class="page">
+    <div class="card">
+      <h2>Watch Ads & Earn</h2>
+      <p>Watch short ads to earn 10 ETB per view.</p>
+      <button onclick="watchAd()">Watch Ad</button>
+    </div>
+  </div>
+
+  <!-- Referral Page -->
+  <div id="referral" class="page">
+    <div class="card">
+      <h2>Invite Friends</h2>
+      <p>Get 20 ETB for every friend who joins using your link.</p>
+      <button onclick="copyRefLink()">Copy Referral Link</button>
+    </div>
+  </div>
+
+  <!-- Withdraw Page -->
+  <div id="withdraw" class="page">
+    <div class="card">
+      <h2>Withdraw Earnings</h2>
+      <p>Minimum payout: 500 ETB</p>
+      <button onclick="requestWithdrawal()">Request Cashout</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="nav-bar">
+    <button id="tab-dashboard" class="active-tab" onclick="showPage('dashboard')">Dashboard</button>
+    <button id="tab-earn" onclick="showPage('earn')">Earn Ads</button>
+    <button id="tab-referral" onclick="showPage('referral')">Referral</button>
+    <button id="tab-withdraw" onclick="showPage('withdraw')">Withdraw</button>
   </div>
 
   <script>
@@ -27,10 +70,41 @@
     tg.expand();
 
     let points = 0;
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active-tab'));
+      
+      document.getElementById(pageId).classList.add('active');
+      document.getElementById('tab-' + pageId).classList.add('active-tab');
+    }
+
     function claimReward() {
       points += 50;
-      document.getElementById('balance').innerText = points + " ETB";
+      updateBalance();
       alert("Claimed 50 ETB!");
+    }
+
+    function watchAd() {
+      points += 10;
+      updateBalance();
+      alert("Ad completed! +10 ETB added.");
+    }
+
+    function copyRefLink() {
+      alert("Referral link copied to clipboard!");
+    }
+
+    function requestWithdrawal() {
+      if (points < 500) {
+        alert("Minimum withdrawal is 500 ETB. Keep earning!");
+      } else {
+        alert("Withdrawal request submitted!");
+      }
+    }
+
+    function updateBalance() {
+      document.getElementById('balance').innerText = points + " ETB";
     }
   </script>
 </body>
