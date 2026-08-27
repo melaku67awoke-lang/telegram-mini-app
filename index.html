@@ -119,7 +119,8 @@
     function getAdController() {
       if (!AdController && typeof window.Adsgram !== 'undefined') {
         try {
-          AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+          // Enabled debug: true so test ads serve while waiting for Adsgram moderation approval
+          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
         } catch (e) {
           console.error("Adsgram init error:", e);
         }
@@ -194,7 +195,7 @@
 
       try {
         const result = await controller.show();
-        // Strict reward check: Adsgram returns done: true on complete views
+        // Rewards 10 ETB only on successful completion
         if (result && (result.done || result.state === 'completed')) {
           points += 10;
           localStorage.setItem('user_points', points.toString());
