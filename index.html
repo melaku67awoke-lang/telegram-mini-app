@@ -20,6 +20,7 @@
     .nav-bar svg, .bonus-title svg { width: 22px; height: 22px; fill: currentColor; }
     .bonus-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
+    .success-badge { background: #059669; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -61,20 +62,29 @@
   <div id="withdraw" class="page">
     <div class="card">
       <h2>Withdraw Earnings</h2>
-      <p>Minimum withdrawal amount: <strong>500 ETB</strong></p>
       
-      <select id="bank-name">
-        <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
-        <option value="Telebirr">Telebirr</option>
-      </select>
-      
-      <input type="text" id="holder-name" placeholder="Account Holder Name" />
-      <input type="number" id="account-number" placeholder="Account / Phone Number" />
-      <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" />
-      
-      <button onclick="processWithdrawal()">Submit Withdrawal</button>
-      
-      <p class="note">📌 <strong>Notice:</strong> Withdrawal process takes 5 minutes to 24 hours.</p>
+      <!-- Submission Form -->
+      <div id="withdraw-form">
+        <p>Minimum withdrawal amount: <strong>500 ETB</strong></p>
+        <select id="bank-name">
+          <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
+          <option value="Telebirr">Telebirr</option>
+        </select>
+        <input type="text" id="holder-name" placeholder="Account Holder Name" />
+        <input type="number" id="account-number" placeholder="Account / Phone Number" />
+        <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" />
+        <button onclick="processWithdrawal()">Submit Withdrawal</button>
+        <p class="note">📌 <strong>Notice:</strong> Withdrawal process takes 5 minutes to 24 hours.</p>
+      </div>
+
+      <!-- Success Screen -->
+      <div id="withdraw-submitted" style="display: none;">
+        <div class="success-badge">✓ Withdrawal Submitted</div>
+        <p id="submitted-details"></p>
+        <p class="note">📌 Your request is being processed. Payments complete within 5 minutes to 24 hours.</p>
+        <button onclick="resetWithdrawForm()">Submit Another Withdrawal</button>
+      </div>
+
     </div>
   </div>
 
@@ -104,20 +114,13 @@
 
     const AdController = Adsgram.init({ blockId: "44862" });
 
-    let points = 0;
-    let claimedToday = false;
+    // State Variables
+    let points = parseInt(localStorage.getItem('user_points') || '0');
+    let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
 
     function updateUI() {
       document.getElementById('balance').innerText = points + " ETB";
-      const bonusBtn = document.getElementById('bonus-btn');
-      
-      if (claimedToday) {
-        bonusBtn.disabled = true;
-        bonusBtn.innerText = "Claimed Today";
-      } else {
-        bonusBtn.disabled = false;
-        bonusBtn.innerText = "Claim 50 ETB";
-      }
+      checkBonusAvailability();
     }
 
     function showPage(pageId) {
@@ -128,18 +131,40 @@
       document.getElementById('tab-' + pageId).classList.add('active-tab');
     }
 
+    function checkBonusAvailability() {
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const bonusBtn = document.getElementById('bonus-btn');
+
+      if (lastClaimTime > 0 && (now - lastClaimTime < oneDay)) {
+        bonusBtn.disabled = true;
+        bonusBtn.innerText = "Claimed Today";
+      } else {
+        bonusBtn.disabled = false;
+        bonusBtn.innerText = "Claim 50 ETB";
+      }
+    }
+
     function claimReward() {
-      if (!claimedToday) {
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      if (lastClaimTime === 0 || (now - lastClaimTime >= oneDay)) {
         points += 50;
-        claimedToday = true;
+        lastClaimTime = now;
+        localStorage.setItem('user_points', points.toString());
+        localStorage.setItem('last_claim_time', lastClaimTime.toString());
         updateUI();
         alert("Success! You claimed 50 ETB.");
+      } else {
+        alert("Daily bonus already claimed today!");
       }
     }
 
     function watchAd() {
       AdController.show().then((result) => {
         points += 10;
+        localStorage.setItem('user_points', points.toString());
         updateUI();
         alert("Ad completed! +10 ETB added.");
       }).catch((error) => {
@@ -183,13 +208,23 @@
       }
 
       points -= amount;
+      localStorage.setItem('user_points', points.toString());
       updateUI();
       
+      // Clear Inputs
       document.getElementById('holder-name').value = '';
       document.getElementById('account-number').value = '';
       document.getElementById('withdraw-amount').value = '';
 
-      alert(`Submitted Successfully!\n\nBank: ${bank}\nAccount: ${account}\nAmount: ${amount} ETB\n\nNote: Withdrawal process takes 5 minutes to 24 hours.`);
+      // Hide input form and show submitted confirmation
+      document.getElementById('withdraw-form').style.display = 'none';
+      document.getElementById('submitted-details').innerText = `Method: ${bank}\nAccount: ${account}\nRequested Amount: ${amount} ETB`;
+      document.getElementById('withdraw-submitted').style.display = 'block';
+    }
+
+    function resetWithdrawForm() {
+      document.getElementById('withdraw-submitted').style.display = 'none';
+      document.getElementById('withdraw-form').style.display = 'block';
     }
 
     // Initialize UI
