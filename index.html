@@ -20,7 +20,7 @@
     .nav-bar svg, .bonus-title svg { width: 22px; height: 22px; fill: currentColor; }
     .bonus-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
-    .success-badge { background: #059669; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 14px; }
+    .success-badge { background: #059669; padding: 10px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 16px; color: #ffffff; }
   </style>
 </head>
 <body>
@@ -73,16 +73,16 @@
         <input type="text" id="holder-name" placeholder="Account Holder Name" />
         <input type="number" id="account-number" placeholder="Account / Phone Number" />
         <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" />
-        <button onclick="processWithdrawal()">Submit Withdrawal</button>
+        <button type="button" onclick="processWithdrawal()">Submit Withdrawal</button>
         <p class="note">📌 <strong>Notice:</strong> Withdrawal process takes 5 minutes to 24 hours.</p>
       </div>
 
       <!-- Success Screen -->
       <div id="withdraw-submitted" style="display: none;">
         <div class="success-badge">✓ Withdrawal Submitted</div>
-        <p id="submitted-details"></p>
+        <p id="submitted-details" style="line-height: 1.6; font-size: 14px;"></p>
         <p class="note">📌 Your request is being processed. Payments complete within 5 minutes to 24 hours.</p>
-        <button onclick="resetWithdrawForm()">Submit Another Withdrawal</button>
+        <button type="button" onclick="resetWithdrawForm()">Submit Another Withdrawal</button>
       </div>
 
     </div>
@@ -109,17 +109,25 @@
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    // Initialize WebApp cleanly
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.expand();
+    }
 
-    const AdController = Adsgram.init({ blockId: "44862" });
+    let AdController = null;
+    try {
+      if (typeof Adsgram !== 'undefined') {
+        AdController = Adsgram.init({ blockId: "44862" });
+      }
+    } catch(e) { console.log("Adsgram init skipped"); }
 
     // State Variables
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
 
     function updateUI() {
-      document.getElementById('balance').innerText = points + " ETB";
+      const balanceElem = document.getElementById('balance');
+      if (balanceElem) balanceElem.innerText = points + " ETB";
       checkBonusAvailability();
     }
 
@@ -127,14 +135,18 @@
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active-tab'));
       
-      document.getElementById(pageId).classList.add('active');
-      document.getElementById('tab-' + pageId).classList.add('active-tab');
+      const targetPage = document.getElementById(pageId);
+      const targetTab = document.getElementById('tab-' + pageId);
+      if (targetPage) targetPage.classList.add('active');
+      if (targetTab) targetTab.classList.add('active-tab');
     }
 
     function checkBonusAvailability() {
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
       const bonusBtn = document.getElementById('bonus-btn');
+
+      if (!bonusBtn) return;
 
       if (lastClaimTime > 0 && (now - lastClaimTime < oneDay)) {
         bonusBtn.disabled = true;
@@ -162,6 +174,10 @@
     }
 
     function watchAd() {
+      if (!AdController) {
+        alert("Ad network is loading or unavailable. Try again in a moment!");
+        return;
+      }
       AdController.show().then((result) => {
         points += 10;
         localStorage.setItem('user_points', points.toString());
@@ -173,12 +189,14 @@
     }
 
     function copyRefLink() {
-      const userId = tg.initDataUnsafe?.user?.id || "5617845500";
+      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "5617845500";
       const refLink = `https://t.me/EarnETBMoney_Bot/Hub?startapp=${userId}`;
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(refLink).then(() => {
           alert("Referral link copied to clipboard!\n\n" + refLink);
+        }).catch(() => {
+          alert("Your referral link:\n\n" + refLink);
         });
       } else {
         alert("Your referral link:\n\n" + refLink);
@@ -187,8 +205,8 @@
 
     function processWithdrawal() {
       const bank = document.getElementById('bank-name').value;
-      const holder = document.getElementById('holder-name').value;
-      const account = document.getElementById('account-number').value;
+      const holder = document.getElementById('holder-name').value.trim();
+      const account = document.getElementById('account-number').value.trim();
       const amountInput = document.getElementById('withdraw-amount').value;
       const amount = parseInt(amountInput);
 
@@ -197,28 +215,29 @@
         return;
       }
 
-      if (amount < 500) {
+      if (isNaN(amount) || amount < 500) {
         alert("Minimum withdrawal amount is 500 ETB.");
         return;
       }
 
       if (amount > points) {
-        alert("Insufficient balance! You only have " + points + " ETB.");
+        alert("Insufficient balance! You currently have " + points + " ETB.");
         return;
       }
 
+      // Deduct balance and sync UI
       points -= amount;
       localStorage.setItem('user_points', points.toString());
       updateUI();
-      
-      // Clear Inputs
+
+      // Clear input fields
       document.getElementById('holder-name').value = '';
       document.getElementById('account-number').value = '';
       document.getElementById('withdraw-amount').value = '';
 
-      // Hide input form and show submitted confirmation
+      // Render Confirmation Screen
       document.getElementById('withdraw-form').style.display = 'none';
-      document.getElementById('submitted-details').innerText = `Method: ${bank}\nAccount: ${account}\nRequested Amount: ${amount} ETB`;
+      document.getElementById('submitted-details').innerHTML = `<strong>Method:</strong> ${bank}<br><strong>Account:</strong> ${account}<br><strong>Amount:</strong> ${amount} ETB`;
       document.getElementById('withdraw-submitted').style.display = 'block';
     }
 
@@ -227,7 +246,7 @@
       document.getElementById('withdraw-form').style.display = 'block';
     }
 
-    // Initialize UI
+    // Run startup sync
     updateUI();
   </script>
 </body>
