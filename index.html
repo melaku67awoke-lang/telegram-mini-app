@@ -57,7 +57,20 @@
   <div id="withdraw" class="page">
     <div class="card">
       <h2>Withdraw Earnings</h2>
-      <div id="withdraw-content"></div>
+      <p>Minimum withdrawal amount: <strong>500 ETB</strong></p>
+      
+      <select id="bank-name">
+        <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
+        <option value="Telebirr">Telebirr</option>
+      </select>
+      
+      <input type="text" id="holder-name" placeholder="Account Holder Name" />
+      <input type="number" id="account-number" placeholder="Account / Phone Number" />
+      <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" />
+      
+      <button onclick="processWithdrawal()">Submit Withdrawal</button>
+      
+      <p class="note">📌 <strong>Notice:</strong> Withdrawal process takes 5 minutes to 24 hours.</p>
     </div>
   </div>
 
@@ -90,11 +103,9 @@
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
 
-    function saveState() {
-      localStorage.setItem('user_points', points);
-      updateBalance();
+    function updateUI() {
+      document.getElementById('balance').innerText = points + " ETB";
       checkBonusAvailability();
-      renderWithdrawPage();
     }
 
     function showPage(pageId) {
@@ -126,8 +137,9 @@
       if (now - lastClaimTime >= oneDay) {
         points += 50;
         lastClaimTime = now;
-        localStorage.setItem('last_claim_time', lastClaimTime);
-        saveState();
+        localStorage.setItem('user_points', points.toString());
+        localStorage.setItem('last_claim_time', lastClaimTime.toString());
+        updateUI();
         alert("Success! You claimed 50 ETB.");
       }
     }
@@ -135,7 +147,8 @@
     function watchAd() {
       AdController.show().then((result) => {
         points += 10;
-        saveState();
+        localStorage.setItem('user_points', points.toString());
+        updateUI();
         alert("Ad completed! +10 ETB added.");
       }).catch((error) => {
         alert("Ad was skipped or unavailable. Try again!");
@@ -143,67 +156,54 @@
     }
 
     function copyRefLink() {
-      const userId = tg.initDataUnsafe?.user?.id || "user";
-      const refLink = `https://t.me/EarnETBMoney_Bot?start=${userId}`;
-      navigator.clipboard.writeText(refLink).then(() => {
-        alert("Referral link copied to clipboard!\n\n" + refLink);
-      }).catch(() => {
-        alert("Referral link:\n" + refLink);
-      });
-    }
-
-    function renderWithdrawPage() {
-      const container = document.getElementById('withdraw-content');
-      if (points < 500) {
-        container.innerHTML = `
-          <p>Minimum payout: <strong>500 ETB</strong></p>
-          <p class="note">You currently have ${points} ETB. Keep earning to unlock cashouts!</p>
-          <button disabled>Request Cashout (Locked)</button>
-        `;
+      const userId = tg.initDataUnsafe?.user?.id || "5617845500";
+      const refLink = `https://t.me/EarnETBMoney_Bot/Hub?startapp=${userId}`;
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(refLink).then(() => {
+          alert("Referral link copied to clipboard!\n\n" + refLink);
+        });
       } else {
-        container.innerHTML = `
-          <p>Select your payout details below:</p>
-          <select id="bank-name">
-            <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
-            <option value="Telebirr">Telebirr</option>
-            <option value="BOA">Bank of Abyssinia</option>
-            <option value="Awash">Awash Bank</option>
-          </select>
-          <input type="text" id="holder-name" placeholder="Account Holder Name" />
-          <input type="number" id="account-number" placeholder="Account / Phone Number" />
-          <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" value="${points}" max="${points}" />
-          <button onclick="processWithdrawal()">Submit Withdrawal</button>
-          <p class="note">📌 <strong>Notice:</strong> Payment process takes 10 minutes up to 24 hrs.</p>
-        `;
+        alert("Your referral link:\n\n" + refLink);
       }
     }
 
     function processWithdrawal() {
+      const bank = document.getElementById('bank-name').value;
       const holder = document.getElementById('holder-name').value;
       const account = document.getElementById('account-number').value;
-      const amount = parseInt(document.getElementById('withdraw-amount').value);
+      const amountInput = document.getElementById('withdraw-amount').value;
+      const amount = parseInt(amountInput);
 
-      if (!holder || !account) {
-        alert("Please fill in all account details.");
+      if (!holder || !account || !amountInput) {
+        alert("Please fill in all bank details and withdrawal amount.");
         return;
       }
 
-      if (amount < 500 || amount > points) {
-        alert("Invalid withdrawal amount.");
+      if (amount < 500) {
+        alert("Minimum withdrawal amount is 500 ETB.");
+        return;
+      }
+
+      if (amount > points) {
+        alert("Insufficient balance! You only have " + points + " ETB.");
         return;
       }
 
       points -= amount;
-      saveState();
-      alert(`Withdrawal request submitted successfully!\n\nNote: The payment process takes 10 minutes up to 24 hrs.`);
+      localStorage.setItem('user_points', points.toString());
+      updateUI();
+      
+      // Clear inputs
+      document.getElementById('holder-name').value = '';
+      document.getElementById('account-number').value = '';
+      document.getElementById('withdraw-amount').value = '';
+
+      alert(`Submitted Successfully!\n\nBank: ${bank}\nAccount: ${account}\nAmount: ${amount} ETB\n\nNote: Withdrawal process takes 5 minutes to 24 hours.`);
     }
 
-    function updateBalance() {
-      document.getElementById('balance').innerText = points + " ETB";
-    }
-
-    // Run on startup
-    saveState();
+    // Initialize UI on startup
+    updateUI();
   </script>
 </body>
 </html>
