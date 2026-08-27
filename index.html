@@ -31,7 +31,6 @@
     </div>
     <div class="card">
       <h3>Daily Bonus</h3>
-      <p id="bonus-status">Claim 50 ETB once every 24 hours!</p>
       <button id="bonus-btn" onclick="claimReward()">Claim 50 ETB</button>
     </div>
   </div>
@@ -58,13 +57,11 @@
   <div id="withdraw" class="page">
     <div class="card">
       <h2>Withdraw Earnings</h2>
-      <div id="withdraw-content">
-        <!-- Dynamically rendered based on points balance -->
-      </div>
+      <div id="withdraw-content"></div>
     </div>
   </div>
 
-  <!-- Bottom Navigation with Icons -->
+  <!-- Bottom Navigation -->
   <div class="nav-bar">
     <button id="tab-dashboard" class="active-tab" onclick="showPage('dashboard')">
       <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -75,7 +72,7 @@
       Earn Ads
     </button>
     <button id="tab-referral" onclick="showPage('referral')">
-      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
       Referral
     </button>
     <button id="tab-withdraw" onclick="showPage('withdraw')">
@@ -90,7 +87,6 @@
 
     const AdController = Adsgram.init({ blockId: "44862" });
 
-    // State management using localStorage
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
 
@@ -113,17 +109,13 @@
       const now = Date.now();
       const oneDay = 24 * 60 * 60 * 1000;
       const bonusBtn = document.getElementById('bonus-btn');
-      const bonusStatus = document.getElementById('bonus-status');
 
       if (now - lastClaimTime < oneDay) {
-        const remainingHours = Math.ceil((oneDay - (now - lastClaimTime)) / (1000 * 60 * 60));
         bonusBtn.disabled = true;
-        bonusBtn.innerText = "Claimed";
-        bonusStatus.innerText = `Next claim available in ~${remainingHours} hours.`;
+        bonusBtn.innerText = "Claimed Today";
       } else {
         bonusBtn.disabled = false;
         bonusBtn.innerText = "Claim 50 ETB";
-        bonusStatus.innerText = "Claim 50 ETB once every 24 hours!";
       }
     }
 
@@ -151,7 +143,13 @@
     }
 
     function copyRefLink() {
-      alert("Referral link copied to clipboard!");
+      const userId = tg.initDataUnsafe?.user?.id || "user";
+      const refLink = `https://t.me/EarnETBMoney_Bot?start=${userId}`;
+      navigator.clipboard.writeText(refLink).then(() => {
+        alert("Referral link copied to clipboard!\n\n" + refLink);
+      }).catch(() => {
+        alert("Referral link:\n" + refLink);
+      });
     }
 
     function renderWithdrawPage() {
@@ -175,7 +173,7 @@
           <input type="number" id="account-number" placeholder="Account / Phone Number" />
           <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" value="${points}" max="${points}" />
           <button onclick="processWithdrawal()">Submit Withdrawal</button>
-          <p class="note">📌 <strong>Notice:</strong> Payment processing takes between 10 minutes up to 24 hours.</p>
+          <p class="note">📌 <strong>Notice:</strong> Payment process takes 10 minutes up to 24 hrs.</p>
         `;
       }
     }
@@ -197,17 +195,15 @@
 
       points -= amount;
       saveState();
-      alert(`Withdrawal request submitted successfully!\n\nNote: The payment process takes between 10 minutes up to 24 hours.`);
+      alert(`Withdrawal request submitted successfully!\n\nNote: The payment process takes 10 minutes up to 24 hrs.`);
     }
 
     function updateBalance() {
       document.getElementById('balance').innerText = points + " ETB";
     }
 
-    // Initialize state
-    updateBalance();
-    checkBonusAvailability();
-    renderWithdrawPage();
+    // Run on startup
+    saveState();
   </script>
 </body>
 </html>
