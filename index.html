@@ -13,12 +13,10 @@
       margin: 0; 
       padding: 20px; 
       padding-bottom: 80px;
-      /* Background Image Configuration */
       background: #0f172a url('bg.png') no-repeat center center fixed; 
       background-size: cover;
     }
     
-    /* Semi-transparent cards so the background shows through cleanly */
     .card { 
       background: rgba(30, 41, 59, 0.85); 
       backdrop-filter: blur(8px);
@@ -161,21 +159,24 @@
       window.Telegram.WebApp.expand();
     }
 
-    // Active Adsgram Block ID
     const BLOCK_ID = "44916";
     let AdController = null;
 
-    function getAdController() {
-      if (!AdController && typeof window.Adsgram !== 'undefined') {
+    // Initialize Adsgram controller immediately on load
+    function initAdsgram() {
+      if (typeof window.Adsgram !== 'undefined') {
         try {
-          // Debug is set to true to force test ads to display
           AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
         } catch (e) {
           console.error("Adsgram init error:", e);
         }
+      } else {
+        console.warn("Adsgram SDK script not loaded yet.");
       }
-      return AdController;
     }
+
+    // Try initializing right away or when window loads
+    window.addEventListener('DOMContentLoaded', initAdsgram);
 
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
@@ -236,11 +237,13 @@
       watchBtn.disabled = true;
       watchBtn.innerText = "Loading Ad...";
 
-      const controller = getAdController();
+      if (!AdController) {
+        initAdsgram();
+      }
 
-      if (controller) {
+      if (AdController) {
         try {
-          const result = await controller.show();
+          const result = await AdController.show();
           if (result && (result.done || result.state === 'completed')) {
             grantReward();
             watchBtn.disabled = false;
@@ -248,10 +251,14 @@
             return;
           }
         } catch (error) {
-          console.log("Adsgram call failed or rejected. Falling back to simulator.");
+          // Show explicit error popup if Adsgram fails
+          alert("Adsgram Error: " + (error.description || error.error || JSON.stringify(error)));
         }
+      } else {
+        alert("Adsgram SDK failed to load. Check your network or ad blocker.");
       }
 
+      // Fallback simulator runs only if Adsgram is unavailable or encounters error
       runSimulatedAd(() => {
         grantReward();
         watchBtn.disabled = false;
