@@ -1,356 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Earn Money App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Official Adsgram SDK Script -->
-  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      color: white; 
-      margin: 0; 
-      padding: 20px; 
-      padding-bottom: 80px;
-      background: #0f172a url('bg.png') no-repeat center center fixed; 
-      background-size: cover;
-    }
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+# Replace with your Bot Token from @BotFather
+BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+
+# Replace with your actual WebApp URL (must be https://)
+WEB_APP_URL = "https://your-domain.com/index.html"
+
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_first_name = update.effective_user.first_name or "there"
     
-    .card { 
-      background: rgba(30, 41, 59, 0.85); 
-      backdrop-filter: blur(8px);
-      padding: 20px; 
-      border-radius: 12px; 
-      margin-bottom: 15px; 
-      text-align: center; 
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    # Bilingual text (English & Amharic) matching the screenshot layout
+    welcome_text = (
+        f"Hello {user_first_name}! 👋\n\n"
+        "Use the button below to open Earn Money.\n\n"
+        "Earn Moneyን ለመክፈት ከታች ያለውን ቁልፍ ይጠቀሙ::"
+    )
     
-    button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; width: 100%; cursor: pointer; margin-top: 10px; font-weight: bold; }
-    button:disabled { background: #475569; cursor: not-allowed; }
-    input, select { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 14px; }
-    .page { display: none; }
-    .active { display: block; }
-    
-    .nav-bar { 
-      position: fixed; 
-      bottom: 0; 
-      left: 0; 
-      right: 0; 
-      background: rgba(30, 41, 59, 0.95); 
-      backdrop-filter: blur(10px);
-      display: flex; 
-      justify-content: space-around; 
-      padding: 10px 0; 
-      border-top: 1px solid #334155; 
-    }
-    .nav-bar button { background: none; border: none; color: #94a3b8; font-size: 11px; width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: normal; }
-    .nav-bar button.active-tab { color: #3b82f6; font-weight: bold; }
-    .nav-bar svg, .bonus-title svg { width: 22px; height: 22px; fill: currentColor; }
-    .bonus-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .note { font-size: 12px; color: #cbd5e1; margin-top: 10px; line-height: 1.4; }
-    .success-badge { background: #059669; padding: 10px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 16px; color: #ffffff; }
-    
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
-    .modal-box { background: #1e293b; padding: 30px; border-radius: 16px; border: 1px solid #3b82f6; text-align: center; width: 80%; max-width: 320px; }
-    .timer-circle { width: 60px; height: 60px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 15px auto; }
-  </style>
-</head>
-<body>
+    # Inline WebApp button
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="🚀 Open Earn Money", 
+                web_app=WebAppInfo(url=WEB_APP_URL)
+            )
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-  <!-- Dashboard Page -->
-  <div id="dashboard" class="page active">
-    <div class="card">
-      <h2>Total Balance</h2>
-      <h1 id="balance">0 ETB</h1>
-    </div>
-    <div class="card">
-      <div class="bonus-title">
-        <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4 15.38 12 17 10.83 14.92 8H20v6z"/></svg>
-        <h3>Daily Bonus</h3>
-      </div>
-      <button id="bonus-btn" onclick="claimReward()">Claim 15 ETB</button>
-    </div>
-  </div>
+    # Send the message with the inline button
+    await update.message.reply_text(text=welcome_text, reply_markup=reply_markup)
 
-  <!-- Earn Ads Page -->
-  <div id="earn" class="page">
-    <div class="card">
-      <h2>Watch Ads & Earn</h2>
-      <p>Watch short ads to earn 5 ETB per view.</p>
-      <button id="watch-ad-btn" onclick="watchAd()">Watch Ad</button>
-    </div>
-  </div>
+def main():
+    # Build application
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-  <!-- Referral Page -->
-  <div id="referral" class="page">
-    <div class="card">
-      <h2>Invite Friends</h2>
-      <p>Get 20 ETB for every friend who joins using your link.</p>
-      <p style="font-size: 14px; color: #60a5fa; margin-top: 10px;">Total Referrals: <strong id="ref-count">0</strong> / 10 required</p>
-      <button onclick="copyRefLink()">Copy Referral Link</button>
-    </div>
-  </div>
+    # Add command handlers
+    app.add_handler(CommandHandler("start", start))
 
-  <!-- Withdraw Page -->
-  <div id="withdraw" class="page">
-    <div class="card">
-      <h2>Withdraw Earnings</h2>
-      
-      <!-- Submission Form -->
-      <div id="withdraw-form">
-        <p>Minimum withdrawal: <strong>500 ETB</strong></p>
-        <p style="font-size: 13px; color: #fbbf24; margin-top: -5px;">⚠️ Requires at least 10 completed referrals.</p>
-        <select id="bank-name">
-          <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
-          <option value="Telebirr">Telebirr</option>
-        </select>
-        <input type="text" id="holder-name" placeholder="Account Holder Name" />
-        <input type="number" id="account-number" placeholder="Account / Phone Number" />
-        <input type="number" id="withdraw-amount" placeholder="Withdrawal Amount (ETB)" />
-        <button type="button" onclick="processWithdrawal()">Submit Withdrawal</button>
-        <p class="note">📌 <strong>Notice:</strong> Withdrawal process takes 5 minutes to 24 hours.</p>
-      </div>
+    # Start bot polling
+    print("Bot is running...")
+    app.run_polling()
 
-      <!-- Success Screen -->
-      <div id="withdraw-submitted" style="display: none;">
-        <div class="success-badge">✓ Withdrawal Submitted</div>
-        <p id="submitted-details" style="line-height: 1.6; font-size: 14px;"></p>
-        <p class="note">📌 Your request is being processed. Payments complete within 5 minutes to 24 hours.</p>
-        <button type="button" onclick="resetWithdrawForm()">Submit Another Withdrawal</button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <div class="nav-bar">
-    <button id="tab-dashboard" class="active-tab" onclick="showPage('dashboard')">
-      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg>
-      Dashboard
-    </button>
-    <button id="tab-earn" onclick="showPage('earn')">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-      Earn Ads
-    </button>
-    <button id="tab-referral" onclick="showPage('referral')">
-      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-      Referral
-    </button>
-    <button id="tab-withdraw" onclick="showPage('withdraw')">
-      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      Withdraw
-    </button>
-  </div>
-
-  <!-- Ad Simulator Modal -->
-  <div id="ad-modal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Watching Test Ad...</h3>
-      <p style="font-size: 13px; color: #94a3b8;">Simulating video ad watch.</p>
-      <div id="timer" class="timer-circle">5</div>
-      <p style="font-size: 12px; color: #64748b;">Please wait for reward...</p>
-    </div>
-  </div>
-
-  <script>
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.expand();
-    }
-
-    // Updated with active Adsgram Block ID
-    const BLOCK_ID = "45000";
-    let AdController = null;
-
-    function loadAdsgramScript() {
-      return new Promise((resolve, reject) => {
-        if (typeof window.Adsgram !== 'undefined') {
-          resolve(true);
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = "https://sad.adsgram.ai/js/sad.min.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("Failed to load Adsgram SDK script."));
-        document.head.appendChild(script);
-      });
-    }
-
-    let points = parseInt(localStorage.getItem('user_points') || '0');
-    let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
-    let referrals = parseInt(localStorage.getItem('user_referrals') || '0');
-
-    function updateUI() {
-      const balanceElem = document.getElementById('balance');
-      const refElem = document.getElementById('ref-count');
-      if (balanceElem) balanceElem.innerText = points + " ETB";
-      if (refElem) refElem.innerText = referrals;
-      checkBonusAvailability();
-    }
-
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active-tab'));
-      
-      const targetPage = document.getElementById(pageId);
-      const targetTab = document.getElementById('tab-' + pageId);
-      if (targetPage) targetPage.classList.add('active');
-      if (targetTab) targetTab.classList.add('active-tab');
-    }
-
-    function checkBonusAvailability() {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-      const bonusBtn = document.getElementById('bonus-btn');
-
-      if (!bonusBtn) return;
-
-      if (lastClaimTime > 0 && (now - lastClaimTime < oneDay)) {
-        bonusBtn.disabled = true;
-        bonusBtn.innerText = "Claimed Today";
-      } else {
-        bonusBtn.disabled = false;
-        bonusBtn.innerText = "Claim 15 ETB";
-      }
-    }
-
-    function claimReward() {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-
-      if (lastClaimTime === 0 || (now - lastClaimTime >= oneDay)) {
-        points += 15;
-        lastClaimTime = now;
-        localStorage.setItem('user_points', points.toString());
-        localStorage.setItem('last_claim_time', lastClaimTime.toString());
-        updateUI();
-        alert("Success! You claimed 15 ETB.");
-      } else {
-        alert("Daily bonus already claimed today!");
-      }
-    }
-
-    async function watchAd() {
-      const watchBtn = document.getElementById('watch-ad-btn');
-      watchBtn.disabled = true;
-      watchBtn.innerText = "Loading Ad...";
-
-      try {
-        await loadAdsgramScript();
-        
-        if (typeof window.Adsgram !== 'undefined') {
-          if (!AdController) {
-            AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: false });
-          }
-
-          const result = await AdController.show();
-          if (result && (result.done || result.state === 'completed')) {
-            grantReward();
-            watchBtn.disabled = false;
-            watchBtn.innerText = "Watch Ad";
-            return;
-          }
-        }
-      } catch (error) {
-        console.warn("Adsgram live ad unavailable, running fallback:", error);
-      }
-
-      // Run fallback simulator if no live ad returns
-      runSimulatedAd(() => {
-        grantReward();
-        watchBtn.disabled = false;
-        watchBtn.innerText = "Watch Ad";
-      });
-    }
-
-    function runSimulatedAd(callback) {
-      const modal = document.getElementById('ad-modal');
-      const timerDisplay = document.getElementById('timer');
-      modal.style.display = 'flex';
-      let secondsLeft = 5;
-      timerDisplay.innerText = secondsLeft;
-
-      const countdown = setInterval(() => {
-        secondsLeft--;
-        timerDisplay.innerText = secondsLeft;
-        if (secondsLeft <= 0) {
-          clearInterval(countdown);
-          modal.style.display = 'none';
-          callback();
-        }
-      }, 1000);
-    }
-
-    function grantReward() {
-      points += 5;
-      localStorage.setItem('user_points', points.toString());
-      updateUI();
-      alert("Ad completed! +5 ETB added.");
-    }
-
-    function copyRefLink() {
-      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "5617845500";
-      const refLink = `https://t.me/EarnETBMoney_Bot/Hub?startapp=${userId}`;
-      
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(refLink).then(() => {
-          alert("Referral link copied to clipboard!\n\n" + refLink);
-        }).catch(() => {
-          alert("Your referral link:\n\n" + refLink);
-        });
-      } else {
-        alert("Your referral link:\n\n" + refLink);
-      }
-    }
-
-    function processWithdrawal() {
-      const bank = document.getElementById('bank-name').value;
-      const holder = document.getElementById('holder-name').value.trim();
-      const account = document.getElementById('account-number').value.trim();
-      const amountInput = document.getElementById('withdraw-amount').value;
-      const amount = parseInt(amountInput);
-
-      if (!holder || !account || !amountInput) {
-        alert("Please fill in all bank details and withdrawal amount.");
-        return;
-      }
-
-      if (isNaN(amount) || amount < 500) {
-        alert("Minimum withdrawal amount is 500 ETB.");
-        return;
-      }
-
-      if (amount > points) {
-        alert("Insufficient balance! You currently have " + points + " ETB.");
-        return;
-      }
-
-      if (referrals < 10) {
-        alert("Withdrawal requirement not met! You need at least 10 referrals to submit a withdrawal. Current referrals: " + referrals + "/10.");
-        return;
-      }
-
-      points -= amount;
-      localStorage.setItem('user_points', points.toString());
-      updateUI();
-
-      document.getElementById('holder-name').value = '';
-      document.getElementById('account-number').value = '';
-      document.getElementById('withdraw-amount').value = '';
-
-      document.getElementById('withdraw-form').style.display = 'none';
-      document.getElementById('submitted-details').innerHTML = `<strong>Method:</strong> ${bank}<br><strong>Account:</strong> ${account}<br><strong>Amount:</strong> ${amount} ETB`;
-      document.getElementById('withdraw-submitted').style.display = 'block';
-    }
-
-    function resetWithdrawForm() {
-      document.getElementById('withdraw-submitted').style.display = 'none';
-      document.getElementById('withdraw-form').style.display = 'block';
-    }
-
-    updateUI();
-  </script>
-</body>
-</html>
+if __name__ == "__main__":
+    main()
