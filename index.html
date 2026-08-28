@@ -162,21 +162,20 @@
     const BLOCK_ID = "44916";
     let AdController = null;
 
-    // Initialize Adsgram controller immediately on load
-    function initAdsgram() {
-      if (typeof window.Adsgram !== 'undefined') {
-        try {
-          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
-        } catch (e) {
-          console.error("Adsgram init error:", e);
+    // Helper to dynamically load external scripts if head script fails
+    function loadAdsgramScript() {
+      return new Promise((resolve, reject) => {
+        if (typeof window.Adsgram !== 'undefined') {
+          resolve(true);
+          return;
         }
-      } else {
-        console.warn("Adsgram SDK script not loaded yet.");
-      }
+        const script = document.createElement('script');
+        script.src = "https://adsgram.ai/js/adsgram-ad-sdk.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error("Network blocked connection to Adsgram SDK."));
+        document.head.appendChild(script);
+      });
     }
-
-    // Try initializing right away or when window loads
-    window.addEventListener('DOMContentLoaded', initAdsgram);
 
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
@@ -237,12 +236,15 @@
       watchBtn.disabled = true;
       watchBtn.innerText = "Loading Ad...";
 
-      if (!AdController) {
-        initAdsgram();
-      }
+      try {
+        await loadAdsgramScript();
+        
+        if (!AdController && typeof window.Adsgram !== 'undefined') {
+          // Set debug: true for test mode, set debug: false for live production
+          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
+        }
 
-      if (AdController) {
-        try {
+        if (AdController) {
           const result = await AdController.show();
           if (result && (result.done || result.state === 'completed')) {
             grantReward();
@@ -250,15 +252,12 @@
             watchBtn.innerText = "Watch Ad";
             return;
           }
-        } catch (error) {
-          // Show explicit error popup if Adsgram fails
-          alert("Adsgram Error: " + (error.description || error.error || JSON.stringify(error)));
         }
-      } else {
-        alert("Adsgram SDK failed to load. Check your network or ad blocker.");
+      } catch (error) {
+        console.warn("Adsgram failed, falling back to simulator:", error);
       }
 
-      // Fallback simulator runs only if Adsgram is unavailable or encounters error
+      // If Adsgram is blocked or fails, fall back smoothly to simulator
       runSimulatedAd(() => {
         grantReward();
         watchBtn.disabled = false;
