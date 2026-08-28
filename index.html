@@ -2,29 +2,26 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Replace with your Bot Token from @BotFather
+# 1. PASTE YOUR EXACT TOKEN FROM @BOTFATHER HERE
 BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 
-# Replace with your actual WebApp URL (must be https://)
+# 2. PASTE YOUR WEBAPP URL HERE (MUST BE HTTPS)
 WEB_APP_URL = "https://your-domain.com/index.html"
 
-# Configure logging
+# Enable console logging to spot connection/token errors
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_first_name = update.effective_user.first_name or "there"
+    print("Received /start command from user!")
     
-    # Bilingual text (English & Amharic) matching the screenshot layout
     welcome_text = (
-        f"Hello {user_first_name}! 👋\n\n"
         "Use the button below to open Earn Money.\n\n"
         "Earn Moneyን ለመክፈት ከታች ያለውን ቁልፍ ይጠቀሙ::"
     )
     
-    # Inline WebApp button
     keyboard = [
         [
             InlineKeyboardButton(
@@ -33,21 +30,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         ]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Send the message with the inline button
-    await update.message.reply_text(text=welcome_text, reply_markup=reply_markup)
-
-def main():
-    # Build application
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    # Add command handlers
-    app.add_handler(CommandHandler("start", start))
-
-    # Start bot polling
-    print("Bot is running...")
-    app.run_polling()
+    
+    await update.message.reply_text(
+        text=welcome_text, 
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 if __name__ == "__main__":
-    main()
+    print("Initializing bot...")
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    print("Bot is polling. Send /start in Telegram now...")
+    app.run_polling()
