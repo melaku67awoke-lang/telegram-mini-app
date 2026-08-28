@@ -150,7 +150,7 @@
   <div id="ad-modal" class="modal-overlay">
     <div class="modal-box">
       <h3>Watching Test Ad...</h3>
-      <p style="font-size: 13px; color: #94a3b8;">Adsgram is currently in moderation. Simulating video ad watch.</p>
+      <p style="font-size: 13px; color: #94a3b8;">Simulating video ad watch.</p>
       <div id="timer" class="timer-circle">5</div>
       <p style="font-size: 12px; color: #64748b;">Please wait for reward...</p>
     </div>
@@ -161,13 +161,14 @@
       window.Telegram.WebApp.expand();
     }
 
-    const BLOCK_ID = "44862";
+    // Active Adsgram Block ID
+    const BLOCK_ID = "44916";
     let AdController = null;
 
     function getAdController() {
       if (!AdController && typeof window.Adsgram !== 'undefined') {
         try {
-          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
+          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: false });
         } catch (e) {
           console.error("Adsgram init error:", e);
         }
@@ -246,7 +247,7 @@
             return;
           }
         } catch (error) {
-          console.log("Adsgram rejected. Falling back to simulator.");
+          console.log("Adsgram call failed or rejected. Falling back to simulator.");
         }
       }
 
