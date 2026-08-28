@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Earn Money App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
+  <!-- Correct official Adsgram SDK URL -->
+  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -170,9 +171,9 @@
           return;
         }
         const script = document.createElement('script');
-        script.src = "https://adsgram.ai/js/adsgram-ad-sdk.js";
+        script.src = "https://sad.adsgram.ai/js/sad-index.js";
         script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("Network blocked connection to Adsgram SDK."));
+        script.onerror = () => reject(new Error("Failed to load Adsgram SDK script."));
         document.head.appendChild(script);
       });
     }
@@ -257,7 +258,7 @@
         console.warn("Adsgram failed, falling back to simulator:", error);
       }
 
-      // If Adsgram is blocked or fails, fall back smoothly to simulator
+      // If Adsgram fails to play, fall back to simulator
       runSimulatedAd(() => {
         grantReward();
         watchBtn.disabled = false;
