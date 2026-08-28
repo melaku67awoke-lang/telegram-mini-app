@@ -22,7 +22,6 @@
     .note { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
     .success-badge { background: #059669; padding: 10px 16px; border-radius: 20px; display: inline-block; font-weight: bold; margin-bottom: 15px; font-size: 16px; color: #ffffff; }
     
-    /* Test Ad Modal Overlay */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
     .modal-box { background: #1e293b; padding: 30px; border-radius: 16px; border: 1px solid #3b82f6; text-align: center; width: 80%; max-width: 320px; }
     .timer-circle { width: 60px; height: 60px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 15px auto; }
@@ -41,7 +40,7 @@
         <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4 15.38 12 17 10.83 14.92 8H20v6z"/></svg>
         <h3>Daily Bonus</h3>
       </div>
-      <button id="bonus-btn" onclick="claimReward()">Claim 50 ETB</button>
+      <button id="bonus-btn" onclick="claimReward()">Claim 15 ETB</button>
     </div>
   </div>
 
@@ -49,7 +48,7 @@
   <div id="earn" class="page">
     <div class="card">
       <h2>Watch Ads & Earn</h2>
-      <p>Watch short ads to earn 10 ETB per view.</p>
+      <p>Watch short ads to earn 5 ETB per view.</p>
       <button id="watch-ad-btn" onclick="watchAd()">Watch Ad</button>
     </div>
   </div>
@@ -59,6 +58,7 @@
     <div class="card">
       <h2>Invite Friends</h2>
       <p>Get 20 ETB for every friend who joins using your link.</p>
+      <p style="font-size: 14px; color: #3b82f6; margin-top: 10px;">Total Referrals: <strong id="ref-count">0</strong> / 10 required</p>
       <button onclick="copyRefLink()">Copy Referral Link</button>
     </div>
   </div>
@@ -70,7 +70,8 @@
       
       <!-- Submission Form -->
       <div id="withdraw-form">
-        <p>Minimum withdrawal amount: <strong>500 ETB</strong></p>
+        <p>Minimum withdrawal: <strong>500 ETB</strong></p>
+        <p style="font-size: 13px; color: #f59e0b; margin-top: -5px;">⚠️ Requires at least 10 completed referrals.</p>
         <select id="bank-name">
           <option value="CBE">Commercial Bank of Ethiopia (CBE)</option>
           <option value="Telebirr">Telebirr</option>
@@ -144,10 +145,13 @@
 
     let points = parseInt(localStorage.getItem('user_points') || '0');
     let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
+    let referrals = parseInt(localStorage.getItem('user_referrals') || '0');
 
     function updateUI() {
       const balanceElem = document.getElementById('balance');
+      const refElem = document.getElementById('ref-count');
       if (balanceElem) balanceElem.innerText = points + " ETB";
+      if (refElem) refElem.innerText = referrals;
       checkBonusAvailability();
     }
 
@@ -173,7 +177,7 @@
         bonusBtn.innerText = "Claimed Today";
       } else {
         bonusBtn.disabled = false;
-        bonusBtn.innerText = "Claim 50 ETB";
+        bonusBtn.innerText = "Claim 15 ETB";
       }
     }
 
@@ -182,12 +186,12 @@
       const oneDay = 24 * 60 * 60 * 1000;
 
       if (lastClaimTime === 0 || (now - lastClaimTime >= oneDay)) {
-        points += 50;
+        points += 15;
         lastClaimTime = now;
         localStorage.setItem('user_points', points.toString());
         localStorage.setItem('last_claim_time', lastClaimTime.toString());
         updateUI();
-        alert("Success! You claimed 50 ETB.");
+        alert("Success! You claimed 15 ETB.");
       } else {
         alert("Daily bonus already claimed today!");
       }
@@ -210,11 +214,10 @@
             return;
           }
         } catch (error) {
-          console.log("Adsgram rejected (Unit in moderation). Falling back to simulator.");
+          console.log("Adsgram rejected. Falling back to simulator.");
         }
       }
 
-      // Fallback: Run visual 5-second ad simulator while block status is "In moderation"
       runSimulatedAd(() => {
         grantReward();
         watchBtn.disabled = false;
@@ -241,10 +244,10 @@
     }
 
     function grantReward() {
-      points += 10;
+      points += 5;
       localStorage.setItem('user_points', points.toString());
       updateUI();
-      alert("Ad completed! +10 ETB added.");
+      alert("Ad completed! +5 ETB added.");
     }
 
     function copyRefLink() {
@@ -281,6 +284,12 @@
 
       if (amount > points) {
         alert("Insufficient balance! You currently have " + points + " ETB.");
+        return;
+      }
+
+      // Check if user has invited at least 10 referrals
+      if (referrals < 10) {
+        alert("Withdrawal requirement not met! You need at least 10 referrals to submit a withdrawal. Current referrals: " + referrals + "/10.");
         return;
       }
 
