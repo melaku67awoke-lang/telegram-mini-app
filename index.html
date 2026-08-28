@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Earn Money App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Correct official Adsgram SDK URL -->
-  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
+  <!-- Official Adsgram SDK Script -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -163,7 +163,6 @@
     const BLOCK_ID = "44916";
     let AdController = null;
 
-    // Helper to dynamically load external scripts if head script fails
     function loadAdsgramScript() {
       return new Promise((resolve, reject) => {
         if (typeof window.Adsgram !== 'undefined') {
@@ -171,7 +170,7 @@
           return;
         }
         const script = document.createElement('script');
-        script.src = "https://sad.adsgram.ai/js/sad-index.js";
+        script.src = "https://sad.adsgram.ai/js/sad.min.js";
         script.onload = () => resolve(true);
         script.onerror = () => reject(new Error("Failed to load Adsgram SDK script."));
         document.head.appendChild(script);
@@ -240,12 +239,11 @@
       try {
         await loadAdsgramScript();
         
-        if (!AdController && typeof window.Adsgram !== 'undefined') {
-          // Set debug: true for test mode, set debug: false for live production
-          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
-        }
+        if (typeof window.Adsgram !== 'undefined') {
+          if (!AdController) {
+            AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: false });
+          }
 
-        if (AdController) {
           const result = await AdController.show();
           if (result && (result.done || result.state === 'completed')) {
             grantReward();
@@ -255,10 +253,10 @@
           }
         }
       } catch (error) {
-        console.warn("Adsgram failed, falling back to simulator:", error);
+        console.warn("Adsgram live ad unavailable, running fallback:", error);
       }
 
-      // If Adsgram fails to play, fall back to simulator
+      // Run fallback simulator if no live ad returns
       runSimulatedAd(() => {
         grantReward();
         watchBtn.disabled = false;
