@@ -196,9 +196,10 @@
       });
     }
 
-    let points = parseInt(localStorage.getItem('user_points') || '0');
-    let lastClaimTime = parseInt(localStorage.getItem('last_claim_time') || '0');
-    let referrals = parseInt(localStorage.getItem('user_referrals') || '0');
+    // Safely parse integers from local storage
+    let points = parseInt(localStorage.getItem('user_points')) || 0;
+    let lastClaimTime = parseInt(localStorage.getItem('last_claim_time')) || 0;
+    let referrals = parseInt(localStorage.getItem('user_referrals')) || 0;
 
     function updateUI() {
       const balanceElem = document.getElementById('balance');
@@ -367,6 +368,7 @@
       document.getElementById('withdraw-form').style.display = 'block';
     }
 
+    // Initial load call
     updateUI();
   </script>
 </body>
