@@ -168,7 +168,8 @@
     function getAdController() {
       if (!AdController && typeof window.Adsgram !== 'undefined') {
         try {
-          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: false });
+          // Debug is set to true to force test ads to display
+          AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
         } catch (e) {
           console.error("Adsgram init error:", e);
         }
