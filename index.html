@@ -160,6 +160,7 @@
       window.Telegram.WebApp.expand();
     }
 
+    // Configured with blockId 44916
     const BLOCK_ID = "44916";
     let AdController = null;
 
@@ -241,6 +242,7 @@
         
         if (typeof window.Adsgram !== 'undefined') {
           if (!AdController) {
+            // debug set to false for production live ads
             AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: false });
           }
 
